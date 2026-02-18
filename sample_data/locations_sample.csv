@@ -1,0 +1,21 @@
+location_id,address,latitude,longitude,zone,priority,time_window
+LOC001,"Central Park South, NYC",40.7829,-73.9654,A,High,09:00-11:00
+LOC002,"Times Square, NYC",40.7580,-73.9855,B,Medium,11:00-13:00
+LOC003,"Brooklyn Bridge, NYC",40.7061,-73.9969,C,High,13:00-15:00
+LOC004,"Empire State Building, NYC",40.7484,-73.9857,B,Low,15:00-17:00
+LOC005,"Wall Street, NYC",40.7074,-74.0113,A,Medium,09:00-11:00
+LOC006,"Herald Square, NYC",40.7505,-73.9934,B,High,10:00-12:00
+LOC007,"Washington Square Park, NYC",40.7282,-73.9942,C,Medium,14:00-16:00
+LOC008,"Columbus Circle, NYC",40.7614,-73.9776,A,High,08:00-10:00
+LOC009,"Guggenheim Museum, NYC",40.7691,-73.9563,B,Low,16:00-18:00
+LOC010,"Union Square, NYC",40.7407,-73.9906,C,Medium,12:00-14:00
+LOC011,"Flatiron Building, NYC",40.7411,-73.9897,B,High,09:30-11:30
+LOC012,"High Line Park, NYC",40.7480,-74.0048,A,Medium,11:30-13:30
+LOC013,"9/11 Memorial, NYC",40.7115,-74.0134,C,High,13:30-15:30
+LOC014,"Staten Island Ferry Terminal, NYC",40.6438,-74.0744,A,Low,15:30-17:30
+LOC015,"Coney Island, NYC",40.5755,-73.9707,B,Medium,10:30-12:30
+LOC016,"Yankee Stadium, NYC",40.8296,-73.9262,C,High,14:30-16:30
+LOC017,"Metropolitan Museum, NYC",40.7794,-73.9632,A,Medium,08:30-10:30
+LOC018,"Statue of Liberty, NYC",40.6892,-74.0445,B,High,12:30-14:30
+LOC019,"One World Trade Center, NYC",40.7127,-74.0134,C,Medium,16:30-18:30
+LOC020,"Madison Square Garden, NYC",40.7505,-73.9934,A,High,09:00-11:00

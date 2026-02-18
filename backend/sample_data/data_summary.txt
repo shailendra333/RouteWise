@@ -1,0 +1,72 @@
+============================================================
+HISTORICAL ORDER DATA SUMMARY
+============================================================
+
+Generated on: 2026-02-13 11:41:44
+
+Date Range: 2021-02-14 to 2026-02-13
+Total Days: 1,826
+
+Total Orders: 236,482
+Average Orders/Day: 129.51
+Median Orders/Day: 123.00
+Std Dev: 57.54
+Min Orders/Day: 25
+Max Orders/Day: 375
+
+============================================================
+YEARLY BREAKDOWN
+============================================================
+
+2021:
+  Total Orders: 33,635.0
+  Avg Orders/Day: 104.78
+  Days: 321.0
+
+2022:
+  Total Orders: 41,147.0
+  Avg Orders/Day: 112.73
+  Days: 365.0
+
+2023:
+  Total Orders: 46,700.0
+  Avg Orders/Day: 127.95
+  Days: 365.0
+
+2024:
+  Total Orders: 52,309.0
+  Avg Orders/Day: 142.92
+  Days: 366.0
+
+2025:
+  Total Orders: 57,241.0
+  Avg Orders/Day: 156.82
+  Days: 365.0
+
+2026:
+  Total Orders: 5,450.0
+  Avg Orders/Day: 123.86
+  Days: 44.0
+
+============================================================
+SEASONAL PATTERNS
+============================================================
+
+Q1 (Jan-Mar): 97.09 orders/day
+
+Q2 (Apr-Jun): 113.37 orders/day
+
+Q3 (Jul-Sep): 147.74 orders/day
+
+Q4 (Oct-Dec): 159.02 orders/day
+
+============================================================
+WEEKLY PATTERNS
+============================================================
+Monday: 151.96 orders/day
+Tuesday: 151.95 orders/day
+Wednesday: 149.50 orders/day
+Thursday: 149.90 orders/day
+Friday: 151.51 orders/day
+Saturday: 88.85 orders/day
+Sunday: 62.74 orders/day
