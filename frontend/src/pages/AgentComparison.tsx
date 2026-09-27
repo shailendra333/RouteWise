@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Brain, Zap, TrendingUp, Route, MessageSquare, FileText, BarChart3, Clock, DollarSign, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 import axios from 'axios';
+import AgentThinkingStream from '../components/AgentThinkingStream';
 
 interface ComparisonData {
   traditional_agents: any;
@@ -17,6 +18,8 @@ const AgentComparison: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatResponse, setChatResponse] = useState('');
   const [loading, setLoading] = useState(true);
+  const [tradRunId, setTradRunId] = useState<string | null>(null);
+  const [genaiRunId, setGenaiRunId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -102,6 +105,56 @@ const AgentComparison: React.FC = () => {
       if (response.data.success) {
         const explanation = response.data.natural_explanation || response.data.result?.natural_explanation || 'Task completed successfully';
         alert(`✅ ${type === 'traditional' ? 'Traditional' : 'GenAI'} Agent\n\nExecution Time: ${executionTime}s\n\n${explanation}`);
+      }
+    } catch (error: any) {
+      alert(`❌ Error: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setExecuting(null);
+    }
+  };
+
+  // Starts a traced (streamable) execution and stores the run_id so the
+  // AgentThinkingStream component can poll and render live reasoning.
+  const executeAgentTraced = async (type: 'traditional' | 'genai', agent: 'route' | 'demand') => {
+    const key = `${type}-${agent}`;
+    setExecuting(key);
+    if (type === 'traditional') setTradRunId(null); else setGenaiRunId(null);
+
+    try {
+      const ordersResponse = await axios.get('http://localhost:8000/api/data-preview?type=orders&limit=20');
+      const orders = ordersResponse.data?.data || ordersResponse.data?.orders;
+
+      if (!orders || !Array.isArray(orders) || orders.length === 0) {
+        throw new Error('No orders data available. Please upload some order data first.');
+      }
+
+      const data = agent === 'route' ? {
+        current_routes: [{
+          route_id: 1,
+          deliveries: orders.slice(0, 10).map((order: any, idx: number) => ({
+            id: order.id,
+            lat: order.latitude,
+            lon: order.longitude,
+            priority: idx < 2 ? 'urgent' : 'normal'
+          })),
+          efficiency: 0.65
+        }],
+        traffic_data: { congestion_level: 'high' }
+      } : {
+        historical_orders: orders,
+        current_capacity: { vehicles: 10, drivers: 10 },
+        external_factors: { weather: { condition: 'clear' } }
+      };
+
+      const endpoint = type === 'traditional'
+        ? `/api/agents/${agent === 'route' ? 'route-optimizer' : 'demand-predictor'}/execute-traced`
+        : `/api/genai-agents/${agent === 'route' ? 'route-optimizer' : 'demand-predictor'}/execute-traced`;
+
+      const response = await axios.post(`http://localhost:8000${endpoint}`, data);
+
+      if (response.data.success) {
+        if (type === 'traditional') setTradRunId(response.data.run_id);
+        else setGenaiRunId(response.data.run_id);
       }
     } catch (error: any) {
       alert(`❌ Error: ${error.response?.data?.error || error.message}`);
@@ -475,20 +528,20 @@ const AgentComparison: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <button
-                      onClick={() => executeAgent('traditional', 'route')}
+                      onClick={() => executeAgentTraced('traditional', 'route')}
                       disabled={executing !== null}
                       className="w-full bg-blue-600 text-white p-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
                     >
                       <Route className="h-5 w-5" />
-                      {executing === 'traditional-route' ? 'Executing...' : 'Execute Route Optimization'}
+                      {executing === 'traditional-route' ? 'Starting...' : 'Execute Route Optimization'}
                     </button>
                     <button
-                      onClick={() => executeAgent('traditional', 'demand')}
+                      onClick={() => executeAgentTraced('traditional', 'demand')}
                       disabled={executing !== null}
                       className="w-full bg-blue-600 text-white p-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
                     >
                       <TrendingUp className="h-5 w-5" />
-                      {executing === 'traditional-demand' ? 'Executing...' : 'Execute Demand Forecasting'}
+                      {executing === 'traditional-demand' ? 'Starting...' : 'Execute Demand Forecasting'}
                     </button>
                   </div>
                   <div className="mt-4 p-3 bg-white rounded text-sm">
@@ -499,6 +552,11 @@ const AgentComparison: React.FC = () => {
                       <li>📝 Output: Technical metrics</li>
                     </ul>
                   </div>
+                  {tradRunId && (
+                    <div className="mt-4">
+                      <AgentThinkingStream runId={tradRunId} theme="blue" />
+                    </div>
+                  )}
                 </div>
 
                 {/* GenAI Side */}
@@ -509,20 +567,20 @@ const AgentComparison: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <button
-                      onClick={() => executeAgent('genai', 'route')}
+                      onClick={() => executeAgentTraced('genai', 'route')}
                       disabled={executing !== null || !genaiStatus}
                       className="w-full bg-purple-600 text-white p-4 rounded-lg font-medium hover:bg-purple-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
                     >
                       <Route className="h-5 w-5" />
-                      {executing === 'genai-route' ? 'Executing...' : 'Execute Route Optimization'}
+                      {executing === 'genai-route' ? 'Starting...' : 'Execute Route Optimization'}
                     </button>
                     <button
-                      onClick={() => executeAgent('genai', 'demand')}
+                      onClick={() => executeAgentTraced('genai', 'demand')}
                       disabled={executing !== null || !genaiStatus}
                       className="w-full bg-purple-600 text-white p-4 rounded-lg font-medium hover:bg-purple-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
                     >
                       <TrendingUp className="h-5 w-5" />
-                      {executing === 'genai-demand' ? 'Executing...' : 'Execute Demand Forecasting'}
+                      {executing === 'genai-demand' ? 'Starting...' : 'Execute Demand Forecasting'}
                     </button>
                   </div>
                   <div className="mt-4 p-3 bg-white rounded text-sm">
@@ -533,6 +591,11 @@ const AgentComparison: React.FC = () => {
                       <li>📖 Output: Natural language + metrics</li>
                     </ul>
                   </div>
+                  {genaiRunId && (
+                    <div className="mt-4">
+                      <AgentThinkingStream runId={genaiRunId} theme="purple" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -541,8 +604,8 @@ const AgentComparison: React.FC = () => {
                 <h4 className="font-bold text-gray-900 mb-3">How to Compare:</h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                   <li>Click the same action button on both sides (e.g., "Execute Route Optimization")</li>
-                  <li>Note the execution time shown in the alert for each agent</li>
-                  <li>Compare the explanation quality (Traditional = technical, GenAI = natural language)</li>
+                  <li>Watch each agent's live Perceive → Decide → Act → Learn reasoning stream appear in real time</li>
+                  <li>Compare the explanation quality (Traditional = technical, GenAI = natural language from GPT-4)</li>
                   <li>Evaluate which approach better suits your use case</li>
                 </ol>
               </div>

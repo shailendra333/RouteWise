@@ -25,7 +25,7 @@ def generate_5_year_historical_data(output_file='historical_orders_5years.csv'):
     print("🚀 Generating 5 years of historical order data...")
 
     # Date range: 5 years back from today
-    end_date = datetime(2026, 2, 13)  # Today
+    end_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = end_date - timedelta(days=365 * 5)
 
     # Generate daily data
@@ -151,7 +151,7 @@ def generate_product_level_data(output_file='historical_orders_by_product.csv', 
 
     print(f"\n🚀 Generating product-level data for {num_products} products...")
 
-    end_date = datetime(2026, 2, 13)
+    end_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = end_date - timedelta(days=365 * 5)
     date_range = pd.date_range(start=start_date, end=end_date, freq='D')
 
@@ -210,7 +210,7 @@ def generate_zone_level_data(output_file='historical_orders_by_zone.csv'):
 
     print("\n🚀 Generating zone-level data...")
 
-    end_date = datetime(2026, 2, 13)
+    end_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = end_date - timedelta(days=365 * 5)
     date_range = pd.date_range(start=start_date, end=end_date, freq='D')
 

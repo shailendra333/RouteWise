@@ -8,7 +8,8 @@ import {
   MapPin,
   Truck,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  Database
 } from 'lucide-react';
 import MetricCard from '../components/MetricCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -249,7 +250,7 @@ const Dashboard: React.FC = () => {
       {/* Quick Actions */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => navigate('/route-optimization')}
             className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -273,6 +274,14 @@ const Dashboard: React.FC = () => {
             <Package className="h-6 w-6 text-orange-600 mb-2" />
             <h4 className="font-medium text-gray-800">Manage Data</h4>
             <p className="text-sm text-gray-600">Upload and manage datasets</p>
+          </button>
+          <button
+            onClick={() => window.open('http://localhost:8000/data-model-docs', '_blank')}
+            className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Database className="h-6 w-6 text-purple-600 mb-2" />
+            <h4 className="font-medium text-gray-800">Database Schema</h4>
+            <p className="text-sm text-gray-600">View data model documentation</p>
           </button>
         </div>
       </div>

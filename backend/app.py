@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, render_template
 from flask_cors import CORS
 import flask
 import sqlite3
@@ -74,6 +74,25 @@ if GENAI_AGENTS_ENABLED:
 if ADVANCED_LEARNING_ENABLED:
     app.register_blueprint(advanced_learning_bp)
     logger.info("✅ Advanced Learning API endpoints (Phase 2 & 3) registered successfully")
+
+
+@app.route('/api/trace/<run_id>', methods=['GET'])
+def get_agent_trace(run_id):
+    """
+    Poll the live status/events of a traced agent run (Perceive/Decide/Act/Learn).
+    Used by the "Agent Thinking Stream" UI to render live agent reasoning.
+    """
+    try:
+        from ai_agents import trace_bus
+        run = trace_bus.get_run(run_id)
+
+        if run is None:
+            return jsonify({'success': False, 'error': 'Run not found or expired'}), 404
+
+        return jsonify({'success': True, **run}), 200
+    except Exception as e:
+        logger.error(f"Error fetching agent trace {run_id}: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # Database setup
@@ -517,6 +536,11 @@ genetic_optimizer = GeneticRouteOptimizer()
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
+@app.route('/data-model-docs', methods=['GET'])
+def data_model_docs():
+    """Display comprehensive data model and database schema documentation"""
+    return render_template('data_model_docs.html')
 
 @app.route('/api/database-stats', methods=['GET'])
 def get_database_stats():

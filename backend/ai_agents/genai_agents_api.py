@@ -7,10 +7,12 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 import logging
 import os
+import threading
 
 from .genai_route_optimizer_agent import GenAIRouteOptimizerAgent
 from .genai_demand_predictor_agent import GenAIDemandPredictorAgent
 from .genai_orchestrator import GenAIOrchestrator
+from . import trace_bus
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +157,146 @@ def get_status():
             'success': False,
             'error': str(e)
         }), 500
+
+
+def _summarize_for_trace(obj, max_len: int = 220) -> str:
+    """Produce a short human-readable summary of a value for the trace console"""
+    try:
+        text = str(obj)
+        return text if len(text) <= max_len else text[:max_len] + '…'
+    except Exception:
+        return '<unavailable>'
+
+
+def _run_genai_agent_traced(agent, environment: dict, run_id: str, explain_method_name: str):
+    """
+    Execute a GenAI agent's Perceive -> Decide -> Act -> Learn lifecycle in a
+    background thread, emitting a trace event after each phase (including the
+    real GPT-4 generated text) so the frontend can poll and render a live
+    "agent thinking" stream. Since this agent calls Azure OpenAI, phases take
+    real network latency — that's intentional and makes the demo feel authentic.
+    """
+    try:
+        trace_bus.emit(run_id, 'perceive', f"{agent.name} is perceiving the environment (calling Azure OpenAI)…")
+        perception = agent.perceive(environment)
+        genai_analysis = perception.get('genai_analysis', {})
+        trace_bus.emit(
+            run_id, 'perceive', 'GPT-4 situation analysis received',
+            _summarize_for_trace(genai_analysis.get('analysis') or perception)
+        )
+
+        trace_bus.emit(run_id, 'decide', f"{agent.name} is asking GPT-4 to decide on the best actions…")
+        decision = agent.decide(perception)
+        trace_bus.emit(
+            run_id, 'decide', 'GPT-4 decision received',
+            _summarize_for_trace(decision.get('natural_summary') or decision)
+        )
+
+        trace_bus.emit(run_id, 'act', f"{agent.name} is executing the recommended actions…")
+        result = agent.act(decision)
+        trace_bus.emit(run_id, 'act', 'Actions executed', _summarize_for_trace(result))
+
+        trace_bus.emit(run_id, 'learn', f"{agent.name} is updating memory & confidence from this outcome…")
+        experience = {
+            'perception': perception,
+            'decision': decision,
+            'result': result,
+            'success': result.get('success', False),
+            'timestamp': datetime.now().isoformat()
+        }
+        agent.learn(experience)
+        trace_bus.emit(run_id, 'learn', 'Learning complete — experience stored, metrics updated')
+
+        # Extra GenAI-only step: ask GPT-4 to explain the decision in plain English
+        explanation = ''
+        try:
+            if explain_method_name == 'explain_decision_naturally':
+                explanation = agent.explain_decision_naturally(decision, result)
+            elif explain_method_name == 'explain_forecast_naturally':
+                explanation = agent.explain_forecast_naturally(result)
+        except Exception as ex:
+            explanation = f'(explanation unavailable: {ex})'
+
+        if explanation:
+            trace_bus.emit(run_id, 'explain', 'GPT-4 natural-language explanation', explanation)
+
+        final_result = {
+            'success': True,
+            'agent_id': agent.agent_id,
+            'agent_name': agent.name,
+            'result': result,
+            'natural_explanation': explanation,
+            'timestamp': datetime.now().isoformat()
+        }
+        trace_bus.complete(run_id, final_result)
+
+    except Exception as e:
+        logger.error(f"Traced GenAI agent run {run_id} failed: {str(e)}")
+        trace_bus.fail(run_id, str(e))
+
+
+@genai_agents_bp.route('/route-optimizer/execute-traced', methods=['POST'])
+def execute_genai_route_optimizer_traced():
+    """
+    Start a traced (streamable) execution of the GenAI route optimizer.
+    Since this agent calls Azure OpenAI, the Perceive/Decide phases will
+    take real network time — poll GET /api/trace/<run_id> to watch the
+    live GPT-4 reasoning stream in as it's produced.
+    """
+    if not GENAI_ENABLED:
+        return jsonify({'error': 'GenAI agents are disabled'}), 400
+
+    try:
+        data = request.get_json() or {}
+        agent = get_genai_route_optimizer()
+
+        if not agent:
+            return jsonify({'error': 'GenAI Route optimizer not available'}), 404
+
+        run_id = trace_bus.start_run(agent.agent_id, agent.name, 'genai_route_optimization')
+        thread = threading.Thread(
+            target=_run_genai_agent_traced,
+            args=(agent, data, run_id, 'explain_decision_naturally'),
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({'success': True, 'run_id': run_id}), 202
+
+    except Exception as e:
+        logger.error(f"Error starting traced GenAI route optimizer: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@genai_agents_bp.route('/demand-predictor/execute-traced', methods=['POST'])
+def execute_genai_demand_predictor_traced():
+    """
+    Start a traced (streamable) execution of the GenAI demand predictor.
+    Poll GET /api/trace/<run_id> to watch the live GPT-4 reasoning stream.
+    """
+    if not GENAI_ENABLED:
+        return jsonify({'error': 'GenAI agents are disabled'}), 400
+
+    try:
+        data = request.get_json() or {}
+        agent = get_genai_demand_predictor()
+
+        if not agent:
+            return jsonify({'error': 'GenAI Demand predictor not available'}), 404
+
+        run_id = trace_bus.start_run(agent.agent_id, agent.name, 'genai_demand_forecasting')
+        thread = threading.Thread(
+            target=_run_genai_agent_traced,
+            args=(agent, data, run_id, 'explain_forecast_naturally'),
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({'success': True, 'run_id': run_id}), 202
+
+    except Exception as e:
+        logger.error(f"Error starting traced GenAI demand predictor: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @genai_agents_bp.route('/route-optimizer/execute', methods=['POST'])

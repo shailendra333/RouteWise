@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Model & Database Schema - Smart Logistics System</title>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --text-tertiary: #999;
+            --border-color: #e0e0e0;
+            --card-bg: #f8f9fa;
+            --table-hover: #f0f0f0;
+            --header-bg: #667eea;
+            --note-bg: #fff3cd;
+            --note-border: #ffc107;
+            --azure-bg: #e3f2fd;
+            --azure-border: #2196f3;
+        }
+
+        :root[data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --bg-secondary: #0f3460;
+            --bg-tertiary: #16213e;
+            --text-primary: #e4e4e4;
+            --text-secondary: #b8b8b8;
+            --text-tertiary: #888;
+            --border-color: #2d3748;
+            --card-bg: #1a202c;
+            --table-hover: #2d3748;
+            --header-bg: #4a5568;
+            --note-bg: #2d3748;
+            --note-border: #f6ad55;
+            --azure-bg: #2c5282;
+            --azure-border: #63b3ed;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            padding: 20px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            transition: all 0.3s ease;
+        }
+
+        /* Top Controls Bar */
+        .top-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Search Box */
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 14px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+        }
+
+        /* Action Buttons */
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .header h1 {
+            color: var(--text-primary);
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        /* ER Diagram Container */
+        .er-diagram-container {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 40px;
+            overflow-x: auto;
+        }
+
+        .er-diagram-container h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-tertiary);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .toc h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .toc a:hover {
+            background: var(--table-hover);
+            padding-left: 10px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            scroll-margin-top: 80px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section h3 {
+            color: #764ba2;
+            font-size: 1.4em;
+            margin: 20px 0 10px 0;
+        }
+
+        .table-card {
+            background: var(--card-bg);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            scroll-margin-top: 80px;
+        }
+
+        .table-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .table-card.hidden {
+            display: none;
+        }
+
+        .table-card h4 {
+            color: var(--text-primary);
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .anchor-link {
+            color: #667eea;
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .table-card h4:hover .anchor-link {
+            opacity: 1;
+        }
+
+        .table-card .purpose {
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 3px solid #764ba2;
+        }
+
+        .sql-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .sql-example::before {
+            content: 'SQL';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: #4299e1;
+            font-weight: bold;
+        }
+
+        .copy-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: var(--bg-secondary);
+        }
+
+        th {
+            background: var(--header-bg);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: var(--table-hover);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .badge-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .badge-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .badge-info {
+            background: #06b6d4;
+            color: white;
+        }
+
+        .azure-section {
+            background: var(--azure-bg);
+            border-left: 4px solid var(--azure-border);
+        }
+
+        .note {
+            background: var(--note-bg);
+            border-left: 4px solid var(--note-border);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .footer p {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        /* Column Filter */
+        .column-filter {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9em;
+        }
+
+        /* Stats Badge */
+        .stats-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .top-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                max-width: 100%;
+            }
+
+            .control-group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .btn {
+                flex: 1;
+                justify-content: center;
+                min-width: 120px;
+            }
+
+            .toc ul {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 8px 5px;
+            }
+
+            .sql-example {
+                font-size: 0.75em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .badge {
+                font-size: 0.75em;
+                padding: 2px 6px;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+
+            .top-controls,
+            .theme-toggle,
+            .btn,
+            .copy-btn,
+            .anchor-link {
+                display: none !important;
+            }
+
+            .table-card {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        /* No Results Message */
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 1.2em;
+        }
+
+        .no-results i {
+            font-size: 3em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Controls -->
+        <div class="top-controls">
+            <div class="search-container">
+                <input type="text"
+                       id="globalSearch"
+                       class="search-input"
+                       placeholder="🔍 Search tables, columns, or descriptions...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+
+            <div class="control-group">
+                <button class="btn" onclick="exportToPDF()">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                    <span id="themeText">Dark</span>
+                </button>
+                <a href="/" class="btn btn-success">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="header">
+            <h1>📊 Data Model & Database Schema</h1>
+            <p>Smart Logistics System - Complete Database Documentation</p>
+            <p class="stats-badge" id="tableCount">Loading...</p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3><i class="fas fa-list"></i> Quick Navigation</h3>
+            <ul id="tocList">
+                <li><a href="#er-diagram"><i class="fas fa-project-diagram"></i> ER Diagram</a></li>
+                <li><a href="#sqlite-tables"><i class="fas fa-database"></i> SQLite Tables</a></li>
+                <li><a href="#users"><i class="fas fa-users"></i> users</a></li>
+                <li><a href="#orders"><i class="fas fa-shopping-cart"></i> orders</a></li>
+                <li><a href="#routes"><i class="fas fa-route"></i> routes</a></li>
+                <li><a href="#vehicles"><i class="fas fa-truck"></i> vehicles</a></li>
+                <li><a href="#inventory"><i class="fas fa-boxes"></i> inventory</a></li>
+                <li><a href="#demand_history"><i class="fas fa-chart-line"></i> demand_history</a></li>
+                <li><a href="#model_performance"><i class="fas fa-brain"></i> model_performance</a></li>
+                <li><a href="#azure-tables"><i class="fas fa-cloud"></i> Azure Tables</a></li>
+                <li><a href="#relationships"><i class="fas fa-link"></i> Relationships</a></li>
+                <li><a href="#tech-stack"><i class="fas fa-tools"></i> Tech Stack</a></li>
+            </ul>
+        </div>
+
+        <!-- ER Diagram Section -->
+        <div id="er-diagram" class="section">
+            <h2><i class="fas fa-project-diagram"></i> Entity Relationship Diagram</h2>
+            <div class="er-diagram-container">
+                <div class="mermaid">
+erDiagram
+    USERS ||--o{ ORDERS : manages
+    ORDERS }o--|| ROUTES : "assigned to"
+    ROUTES }o--|| VEHICLES : uses
+    VEHICLES ||--o{ ROUTES : travels
+    INVENTORY ||--o{ ORDERS : fulfills
+    DEMAND_HISTORY ||--o{ ORDERS : predicts
+
+    USERS {
+        int id PK
+        string username
+        string email
+        string password
+        string role
+        datetime created_at
+    }
+
+    ORDERS {
+        int id PK
+        date order_date
+        int customer_id
+        string product_id
+        int quantity
+        string delivery_address
+        float latitude
+        float longitude
+        datetime delivery_time
+        string zone
+    }
+
+    ROUTES {
+        int id PK
+        string route_name
+        int vehicle_id FK
+        float distance
+        float estimated_time
+        string status
+        float optimization_score
+    }
+
+    VEHICLES {
+        int id PK
+        string vehicle_number
+        string vehicle_type
+        float capacity
+        string current_location
+        string status
+        string driver_name
+    }
+
+    INVENTORY {
+        int id PK
+        string item_name
+        string sku
+        int quantity
+        int reorder_level
+        string warehouse_location
+        float predicted_demand
+    }
+
+    DEMAND_HISTORY {
+        int id PK
+        date date
+        string zone
+        int demand
+        string weather
+        int day_of_week
+        int is_holiday
+    }
+                </div>
+            </div>
+        </div>
+
+        <!-- SQLite Tables Section -->
+        <div id="sqlite-tables" class="section">
+            <h2>🗄️ SQLite Database Tables (Local Storage)</h2>
+
+            <div id="users" class="table-card">
+                <h4>
+                    1. users
+                    <a href="#users" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Stores user authentication and profile information for system access control.
+                </div>
+
+                <div class="sql-example">
+-- Create users table
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(80) UNIQUE NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    password VARCHAR(200) NOT NULL,
+    role VARCHAR(20) DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sample query: Get all admin users
+SELECT * FROM users WHERE role = 'admin';
+
+-- Sample query: Count users by role
+SELECT role, COUNT(*) as count FROM users GROUP BY role;
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique user identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>username</code></td>
+                            <td>VARCHAR(80)</td>
+                            <td><span class="badge badge-warning">UNIQUE</span> <span class="badge badge-success">NOT NULL</span></td>
+                            <td>User login username</td>
+                        </tr>
+                        <tr>
+                            <td><code>email</code></td>
+                            <td>VARCHAR(120)</td>
+                            <td><span class="badge badge-warning">UNIQUE</span> <span class="badge badge-success">NOT NULL</span></td>
+                            <td>User email address</td>
+                        </tr>
+                        <tr>
+                            <td><code>password</code></td>
+                            <td>VARCHAR(200)</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Hashed password (bcrypt)</td>
+                        </tr>
+                        <tr>
+                            <td><code>role</code></td>
+                            <td>VARCHAR(20)</td>
+                            <td>DEFAULT: 'user'</td>
+                            <td>User role (admin/user/manager)</td>
+                        </tr>
+                        <tr>
+                            <td><code>created_at</code></td>
+                            <td>DATETIME</td>
+                            <td>DEFAULT: CURRENT_TIMESTAMP</td>
+                            <td>Account creation timestamp</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="orders" class="table-card">
+                <h4>
+                    2. orders
+                    <a href="#orders" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Manages customer orders with delivery information and status tracking.
+                </div>
+
+                <div class="sql-example">
+-- Create orders table
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_date DATE NOT NULL,
+    customer_id INTEGER NOT NULL,
+    product_id TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    delivery_address TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    delivery_time TIMESTAMP,
+    zone TEXT DEFAULT 'A',
+    status VARCHAR(20) DEFAULT 'pending'
+);
+
+-- Sample query: Get pending orders
+SELECT * FROM orders WHERE status = 'pending' ORDER BY order_date DESC;
+
+-- Sample query: Orders by zone
+SELECT zone, COUNT(*) as order_count, SUM(quantity) as total_quantity
+FROM orders GROUP BY zone;
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique order identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>order_date</code></td>
+                            <td>DATE</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Order placement date</td>
+                        </tr>
+                        <tr>
+                            <td><code>customer_id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Customer identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>product_id</code></td>
+                            <td>TEXT</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Product SKU or identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>quantity</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Order quantity</td>
+                        </tr>
+                        <tr>
+                            <td><code>delivery_address</code></td>
+                            <td>TEXT</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Delivery destination address</td>
+                        </tr>
+                        <tr>
+                            <td><code>latitude</code></td>
+                            <td>REAL</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Geocoded latitude coordinate</td>
+                        </tr>
+                        <tr>
+                            <td><code>longitude</code></td>
+                            <td>REAL</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Geocoded longitude coordinate</td>
+                        </tr>
+                        <tr>
+                            <td><code>delivery_time</code></td>
+                            <td>TIMESTAMP</td>
+                            <td></td>
+                            <td>Estimated/Actual delivery time</td>
+                        </tr>
+                        <tr>
+                            <td><code>zone</code></td>
+                            <td>TEXT</td>
+                            <td>DEFAULT: 'A'</td>
+                            <td>Delivery zone classification</td>
+                        </tr>
+                        <tr>
+                            <td><code>status</code></td>
+                            <td>VARCHAR(20)</td>
+                            <td>DEFAULT: 'pending'</td>
+                            <td>Order status (pending/in_transit/delivered/cancelled)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="routes" class="table-card">
+                <h4>
+                    3. routes
+                    <a href="#routes" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Stores optimized delivery routes with assigned vehicles and performance metrics.
+                </div>
+
+                <div class="sql-example">
+-- Create routes table
+CREATE TABLE routes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    route_name VARCHAR(100),
+    vehicle_id INTEGER,
+    distance FLOAT,
+    estimated_time FLOAT,
+    status VARCHAR(20) DEFAULT 'planned',
+    optimization_score FLOAT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
+);
+
+-- Sample query: Active routes with vehicle info
+SELECT r.*, v.vehicle_number, v.driver_name
+FROM routes r
+JOIN vehicles v ON r.vehicle_id = v.id
+WHERE r.status = 'active';
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique route identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>route_name</code></td>
+                            <td>VARCHAR(100)</td>
+                            <td></td>
+                            <td>Route display name</td>
+                        </tr>
+                        <tr>
+                            <td><code>vehicle_id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-info">FOREIGN KEY</span></td>
+                            <td>Assigned vehicle reference</td>
+                        </tr>
+                        <tr>
+                            <td><code>distance</code></td>
+                            <td>FLOAT</td>
+                            <td></td>
+                            <td>Total route distance in km</td>
+                        </tr>
+                        <tr>
+                            <td><code>estimated_time</code></td>
+                            <td>FLOAT</td>
+                            <td></td>
+                            <td>Estimated completion time in hours</td>
+                        </tr>
+                        <tr>
+                            <td><code>status</code></td>
+                            <td>VARCHAR(20)</td>
+                            <td>DEFAULT: 'planned'</td>
+                            <td>Route status (planned/active/completed)</td>
+                        </tr>
+                        <tr>
+                            <td><code>optimization_score</code></td>
+                            <td>FLOAT</td>
+                            <td></td>
+                            <td>AI optimization efficiency score</td>
+                        </tr>
+                        <tr>
+                            <td><code>created_at</code></td>
+                            <td>DATETIME</td>
+                            <td>DEFAULT: CURRENT_TIMESTAMP</td>
+                            <td>Route creation timestamp</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="vehicles" class="table-card">
+                <h4>
+                    4. vehicles
+                    <a href="#vehicles" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Manages fleet information including capacity, location, and availability status.
+                </div>
+
+                <div class="sql-example">
+-- Create vehicles table
+CREATE TABLE vehicles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vehicle_number VARCHAR(50) UNIQUE,
+    vehicle_type VARCHAR(50),
+    capacity FLOAT,
+    current_location TEXT,
+    status VARCHAR(20) DEFAULT 'available',
+    driver_name VARCHAR(100),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sample query: Available vehicles by type
+SELECT vehicle_type, COUNT(*) as available_count
+FROM vehicles
+WHERE status = 'available'
+GROUP BY vehicle_type;
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique vehicle identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>vehicle_number</code></td>
+                            <td>VARCHAR(50)</td>
+                            <td><span class="badge badge-warning">UNIQUE</span></td>
+                            <td>Vehicle registration/fleet number</td>
+                        </tr>
+                        <tr>
+                            <td><code>vehicle_type</code></td>
+                            <td>VARCHAR(50)</td>
+                            <td></td>
+                            <td>Vehicle category (truck/van/bike)</td>
+                        </tr>
+                        <tr>
+                            <td><code>capacity</code></td>
+                            <td>FLOAT</td>
+                            <td></td>
+                            <td>Maximum load capacity in kg</td>
+                        </tr>
+                        <tr>
+                            <td><code>current_location</code></td>
+                            <td>TEXT</td>
+                            <td></td>
+                            <td>Current vehicle location</td>
+                        </tr>
+                        <tr>
+                            <td><code>status</code></td>
+                            <td>VARCHAR(20)</td>
+                            <td>DEFAULT: 'available'</td>
+                            <td>Vehicle status (available/in_use/maintenance)</td>
+                        </tr>
+                        <tr>
+                            <td><code>driver_name</code></td>
+                            <td>VARCHAR(100)</td>
+                            <td></td>
+                            <td>Assigned driver name</td>
+                        </tr>
+                        <tr>
+                            <td><code>created_at</code></td>
+                            <td>DATETIME</td>
+                            <td>DEFAULT: CURRENT_TIMESTAMP</td>
+                            <td>Vehicle registration timestamp</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="inventory" class="table-card">
+                <h4>
+                    5. inventory
+                    <a href="#inventory" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Tracks warehouse inventory levels with AI-powered demand forecasting.
+                </div>
+
+                <div class="sql-example">
+-- Create inventory table
+CREATE TABLE inventory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_name VARCHAR(100) NOT NULL,
+    sku VARCHAR(50) UNIQUE,
+    quantity INTEGER DEFAULT 0,
+    reorder_level INTEGER,
+    warehouse_location VARCHAR(100),
+    last_restock_date DATETIME,
+    predicted_demand FLOAT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sample query: Items below reorder level
+SELECT * FROM inventory WHERE quantity <= reorder_level;
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique inventory item identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>item_name</code></td>
+                            <td>VARCHAR(100)</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Product/Item name</td>
+                        </tr>
+                        <tr>
+                            <td><code>sku</code></td>
+                            <td>VARCHAR(50)</td>
+                            <td><span class="badge badge-warning">UNIQUE</span></td>
+                            <td>Stock Keeping Unit code</td>
+                        </tr>
+                        <tr>
+                            <td><code>quantity</code></td>
+                            <td>INTEGER</td>
+                            <td>DEFAULT: 0</td>
+                            <td>Current stock quantity</td>
+                        </tr>
+                        <tr>
+                            <td><code>reorder_level</code></td>
+                            <td>INTEGER</td>
+                            <td></td>
+                            <td>Minimum quantity before reorder</td>
+                        </tr>
+                        <tr>
+                            <td><code>warehouse_location</code></td>
+                            <td>VARCHAR(100)</td>
+                            <td></td>
+                            <td>Storage location within warehouse</td>
+                        </tr>
+                        <tr>
+                            <td><code>last_restock_date</code></td>
+                            <td>DATETIME</td>
+                            <td></td>
+                            <td>Last inventory replenishment date</td>
+                        </tr>
+                        <tr>
+                            <td><code>predicted_demand</code></td>
+                            <td>FLOAT</td>
+                            <td></td>
+                            <td>AI-predicted demand forecast</td>
+                        </tr>
+                        <tr>
+                            <td><code>created_at</code></td>
+                            <td>DATETIME</td>
+                            <td>DEFAULT: CURRENT_TIMESTAMP</td>
+                            <td>Item creation timestamp</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="demand_history" class="table-card">
+                <h4>
+                    6. demand_history
+                    <a href="#demand_history" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Historical demand data for machine learning and forecasting models.
+                </div>
+
+                <div class="sql-example">
+-- Create demand_history table
+CREATE TABLE demand_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date DATE NOT NULL,
+    zone TEXT NOT NULL,
+    demand INTEGER NOT NULL,
+    weather TEXT,
+    day_of_week INTEGER,
+    is_holiday INTEGER DEFAULT 0
+);
+
+-- Sample query: Weekly demand pattern
+SELECT day_of_week, AVG(demand) as avg_demand
+FROM demand_history
+GROUP BY day_of_week
+ORDER BY day_of_week;
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique record identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>date</code></td>
+                            <td>DATE</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Historical data date</td>
+                        </tr>
+                        <tr>
+                            <td><code>zone</code></td>
+                            <td>TEXT</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Delivery zone</td>
+                        </tr>
+                        <tr>
+                            <td><code>demand</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>Number of orders/demand units</td>
+                        </tr>
+                        <tr>
+                            <td><code>weather</code></td>
+                            <td>TEXT</td>
+                            <td></td>
+                            <td>Weather conditions</td>
+                        </tr>
+                        <tr>
+                            <td><code>day_of_week</code></td>
+                            <td>INTEGER</td>
+                            <td></td>
+                            <td>Day of week (0-6)</td>
+                        </tr>
+                        <tr>
+                            <td><code>is_holiday</code></td>
+                            <td>INTEGER</td>
+                            <td>DEFAULT: 0</td>
+                            <td>Holiday flag (0 or 1)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="model_performance" class="table-card">
+                <h4>
+                    7. model_performance
+                    <a href="#model_performance" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Tracks AI/ML model training history and performance metrics.
+                </div>
+
+                <div class="sql-example">
+-- Create model_performance table
+CREATE TABLE model_performance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    model_name TEXT NOT NULL,
+    training_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accuracy REAL,
+    mae REAL,
+    rmse REAL,
+    parameters TEXT
+);
+
+-- Sample query: Best performing models
+SELECT model_name, accuracy, mae, rmse
+FROM model_performance
+ORDER BY accuracy DESC
+LIMIT 5;
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter columns..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Constraints</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td>INTEGER</td>
+                            <td><span class="badge badge-primary">PRIMARY KEY</span></td>
+                            <td>Unique record identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>model_name</code></td>
+                            <td>TEXT</td>
+                            <td><span class="badge badge-success">NOT NULL</span></td>
+                            <td>ML model identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>training_date</code></td>
+                            <td>DATETIME</td>
+                            <td>DEFAULT: CURRENT_TIMESTAMP</td>
+                            <td>Model training timestamp</td>
+                        </tr>
+                        <tr>
+                            <td><code>accuracy</code></td>
+                            <td>REAL</td>
+                            <td></td>
+                            <td>Model accuracy score</td>
+                        </tr>
+                        <tr>
+                            <td><code>mae</code></td>
+                            <td>REAL</td>
+                            <td></td>
+                            <td>Mean Absolute Error</td>
+                        </tr>
+                        <tr>
+                            <td><code>rmse</code></td>
+                            <td>REAL</td>
+                            <td></td>
+                            <td>Root Mean Square Error</td>
+                        </tr>
+                        <tr>
+                            <td><code>parameters</code></td>
+                            <td>TEXT</td>
+                            <td></td>
+                            <td>Model hyperparameters (JSON)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Azure Tables Section -->
+        <div id="azure-tables" class="section">
+            <h2>☁️ Azure Table Storage (Cloud Storage)</h2>
+
+            <div id="tracking_data" class="table-card azure-section">
+                <h4>
+                    1. TrackingData
+                    <a href="#tracking_data" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Real-time GPS tracking data for vehicles and deliveries with Azure IoT Hub integration.
+                </div>
+
+                <div class="sql-example">
+-- Azure Table Storage query example (using Azure SDK)
+from azure.data.tables import TableServiceClient
+
+# Query recent tracking data
+table_client = service.get_table_client("TrackingData")
+entities = table_client.query_entities(
+    query_filter="VehicleId eq 'TRUCK-001' and Timestamp ge datetime'2024-01-01'",
+    select=["VehicleId", "Latitude", "Longitude", "Speed"]
+)
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter properties..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property Name</th>
+                            <th>Data Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PartitionKey</code></td>
+                            <td>String</td>
+                            <td>Vehicle ID for efficient querying</td>
+                        </tr>
+                        <tr>
+                            <td><code>RowKey</code></td>
+                            <td>String</td>
+                            <td>Timestamp-based unique identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>VehicleId</code></td>
+                            <td>String</td>
+                            <td>Reference to vehicle entity</td>
+                        </tr>
+                        <tr>
+                            <td><code>Latitude</code></td>
+                            <td>Double</td>
+                            <td>Current GPS latitude</td>
+                        </tr>
+                        <tr>
+                            <td><code>Longitude</code></td>
+                            <td>Double</td>
+                            <td>Current GPS longitude</td>
+                        </tr>
+                        <tr>
+                            <td><code>Speed</code></td>
+                            <td>Double</td>
+                            <td>Current speed in km/h</td>
+                        </tr>
+                        <tr>
+                            <td><code>Timestamp</code></td>
+                            <td>DateTime</td>
+                            <td>GPS data capture time</td>
+                        </tr>
+                        <tr>
+                            <td><code>Status</code></td>
+                            <td>String</td>
+                            <td>Vehicle operational status</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="delivery_logs" class="table-card azure-section">
+                <h4>
+                    2. DeliveryLogs
+                    <a href="#delivery_logs" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Audit trail and historical logs for all delivery activities and events.
+                </div>
+
+                <div class="sql-example">
+-- Query delivery logs for a specific order
+table_client = service.get_table_client("DeliveryLogs")
+entities = table_client.query_entities(
+    query_filter="PartitionKey eq 'ORDER-12345'",
+    select=["EventType", "EventDescription", "Timestamp"]
+)
+
+# Get all delivery exceptions
+exceptions = table_client.query_entities(
+    query_filter="EventType eq 'exception'"
+)
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter properties..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property Name</th>
+                            <th>Data Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PartitionKey</code></td>
+                            <td>String</td>
+                            <td>Order ID for log grouping</td>
+                        </tr>
+                        <tr>
+                            <td><code>RowKey</code></td>
+                            <td>String</td>
+                            <td>Event timestamp + sequence</td>
+                        </tr>
+                        <tr>
+                            <td><code>OrderId</code></td>
+                            <td>String</td>
+                            <td>Associated order reference</td>
+                        </tr>
+                        <tr>
+                            <td><code>EventType</code></td>
+                            <td>String</td>
+                            <td>Event category (pickup/transit/delivered/exception)</td>
+                        </tr>
+                        <tr>
+                            <td><code>EventDescription</code></td>
+                            <td>String</td>
+                            <td>Detailed event description</td>
+                        </tr>
+                        <tr>
+                            <td><code>Location</code></td>
+                            <td>String</td>
+                            <td>Event location information</td>
+                        </tr>
+                        <tr>
+                            <td><code>Timestamp</code></td>
+                            <td>DateTime</td>
+                            <td>Event occurrence time</td>
+                        </tr>
+                        <tr>
+                            <td><code>UserId</code></td>
+                            <td>String</td>
+                            <td>User who triggered the event</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="ai_analytics" class="table-card azure-section">
+                <h4>
+                    3. AIAnalytics
+                    <a href="#ai_analytics" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Stores AI/ML model predictions, insights, and analytics results for reporting.
+                </div>
+
+                <div class="sql-example">
+-- Query AI predictions by model type
+table_client = service.get_table_client("AIAnalytics")
+lstm_predictions = table_client.query_entities(
+    query_filter="PartitionKey eq 'demand' and ModelType eq 'LSTM'",
+    select=["PredictionResult", "ConfidenceScore", "Timestamp"]
+)
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter properties..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property Name</th>
+                            <th>Data Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PartitionKey</code></td>
+                            <td>String</td>
+                            <td>Analysis type (demand/route/risk)</td>
+                        </tr>
+                        <tr>
+                            <td><code>RowKey</code></td>
+                            <td>String</td>
+                            <td>Analysis timestamp + unique ID</td>
+                        </tr>
+                        <tr>
+                            <td><code>ModelType</code></td>
+                            <td>String</td>
+                            <td>ML model used (RandomForest/LSTM/GeneticAlgorithm)</td>
+                        </tr>
+                        <tr>
+                            <td><code>PredictionResult</code></td>
+                            <td>String (JSON)</td>
+                            <td>Model prediction output</td>
+                        </tr>
+                        <tr>
+                            <td><code>ConfidenceScore</code></td>
+                            <td>Double</td>
+                            <td>Prediction confidence percentage</td>
+                        </tr>
+                        <tr>
+                            <td><code>InputFeatures</code></td>
+                            <td>String (JSON)</td>
+                            <td>Features used for prediction</td>
+                        </tr>
+                        <tr>
+                            <td><code>Timestamp</code></td>
+                            <td>DateTime</td>
+                            <td>Analysis execution time</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="performance_metrics" class="table-card azure-section">
+                <h4>
+                    4. PerformanceMetrics
+                    <a href="#performance_metrics" class="anchor-link">#</a>
+                </h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> System performance monitoring and KPI tracking for dashboard analytics.
+                </div>
+
+                <div class="sql-example">
+-- Query monthly performance metrics
+table_client = service.get_table_client("PerformanceMetrics")
+monthly_metrics = table_client.query_entities(
+    query_filter="PartitionKey eq 'delivery' and Period eq 'monthly'",
+    select=["MetricName", "MetricValue", "Target", "Timestamp"]
+)
+                    <button class="copy-btn" onclick="copySQL(this)">Copy</button>
+                </div>
+
+                <div class="column-filter">
+                    <input type="text" class="filter-input" placeholder="🔍 Filter properties..." onkeyup="filterColumns(this)">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property Name</th>
+                            <th>Data Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PartitionKey</code></td>
+                            <td>String</td>
+                            <td>Metric category (delivery/route/vehicle)</td>
+                        </tr>
+                        <tr>
+                            <td><code>RowKey</code></td>
+                            <td>String</td>
+                            <td>Date + time period identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>MetricName</code></td>
+                            <td>String</td>
+                            <td>KPI name (on-time delivery/fuel efficiency)</td>
+                        </tr>
+                        <tr>
+                            <td><code>MetricValue</code></td>
+                            <td>Double</td>
+                            <td>Measured value</td>
+                        </tr>
+                        <tr>
+                            <td><code>Target</code></td>
+                            <td>Double</td>
+                            <td>Target/benchmark value</td>
+                        </tr>
+                        <tr>
+                            <td><code>Period</code></td>
+                            <td>String</td>
+                            <td>Time period (daily/weekly/monthly)</td>
+                        </tr>
+                        <tr>
+                            <td><code>Timestamp</code></td>
+                            <td>DateTime</td>
+                            <td>Metric collection time</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Relationships & Data Flow -->
+        <div id="relationships" class="section">
+            <h2>🔗 Database Relationships & Data Flow</h2>
+
+            <div class="note">
+                <strong>📌 Key Relationships:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li><code>orders.customer_id</code> → Customer references</li>
+                    <li><code>routes.vehicle_id</code> → <code>vehicles.id</code> (Many-to-One)</li>
+                    <li><code>demand_history.zone</code> → <code>orders.zone</code> (Lookup relationship)</li>
+                    <li>Azure <code>TrackingData.VehicleId</code> → SQLite <code>vehicles.vehicle_number</code></li>
+                    <li>Azure <code>DeliveryLogs.OrderId</code> → SQLite <code>orders.id</code></li>
+                </ul>
+            </div>
+
+            <h3>Data Flow Architecture</h3>
+            <ol style="margin-left: 20px; margin-top: 15px;">
+                <li><strong>Order Creation:</strong> Customer data stored in SQLite <code>orders</code> table</li>
+                <li><strong>Route Optimization:</strong> AI algorithms (Genetic Algorithm/OR-Tools) create optimized routes in <code>routes</code> table</li>
+                <li><strong>Vehicle Assignment:</strong> Available <code>vehicles</code> assigned to routes</li>
+                <li><strong>Real-time Tracking:</strong> GPS data streamed to Azure <code>TrackingData</code> table</li>
+                <li><strong>Event Logging:</strong> All activities recorded in Azure <code>DeliveryLogs</code></li>
+                <li><strong>Analytics Processing:</strong> AI insights stored in Azure <code>AIAnalytics</code></li>
+                <li><strong>Performance Monitoring:</strong> KPIs calculated and stored in Azure <code>PerformanceMetrics</code></li>
+                <li><strong>Demand Forecasting:</strong> Historical data from <code>demand_history</code> used for LSTM predictions</li>
+            </ol>
+        </div>
+
+        <!-- Technology Stack -->
+        <div id="tech-stack" class="section">
+            <h2>🛠️ Technology Stack</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Technology</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Local Database</strong></td>
+                        <td>SQLite 3</td>
+                        <td>Lightweight relational database for core operations</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cloud Storage</strong></td>
+                        <td>Azure Table Storage</td>
+                        <td>Scalable NoSQL storage for tracking and analytics</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend Framework</strong></td>
+                        <td>Flask</td>
+                        <td>Python web framework for REST API</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Processing</strong></td>
+                        <td>Pandas, NumPy</td>
+                        <td>Data manipulation and numerical computation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AI/ML - Route Optimization</strong></td>
+                        <td>SciPy, OR-Tools, Genetic Algorithm</td>
+                        <td>Vehicle routing and optimization algorithms</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AI/ML - Forecasting</strong></td>
+                        <td>TensorFlow, Keras, LSTM</td>
+                        <td>Time series demand forecasting</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AI/ML - Classification</strong></td>
+                        <td>scikit-learn (RandomForest)</td>
+                        <td>Risk assessment and classification</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GenAI</strong></td>
+                        <td>OpenAI API</td>
+                        <td>Natural language insights and recommendations</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frontend</strong></td>
+                        <td>React, TypeScript</td>
+                        <td>Modern web UI framework</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Containerization</strong></td>
+                        <td>Docker</td>
+                        <td>Application containerization and deployment</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- AI Agents Information -->
+        <div class="section">
+            <h2>🤖 AI Agents & Learning Systems</h2>
+
+            <div class="table-card">
+                <h4>Traditional AI Agents</h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Autonomous agents for real-time decision making and optimization.
+                </div>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li><strong>Route Optimization Agent:</strong> Uses genetic algorithms and OR-Tools for optimal route planning</li>
+                    <li><strong>Demand Forecasting Agent:</strong> LSTM-based time series prediction for inventory planning</li>
+                    <li><strong>Risk Assessment Agent:</strong> RandomForest classifier for delivery risk evaluation</li>
+                    <li><strong>Fleet Management Agent:</strong> Vehicle allocation and scheduling optimization</li>
+                </ul>
+            </div>
+
+            <div class="table-card azure-section">
+                <h4>GenAI Agents (OpenAI Integration)</h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Natural language processing and intelligent recommendations.
+                </div>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li><strong>Insight Generator:</strong> Analyzes data and provides natural language insights</li>
+                    <li><strong>Recommendation Engine:</strong> Suggests operational improvements based on patterns</li>
+                    <li><strong>Query Assistant:</strong> Natural language interface for data queries</li>
+                    <li><strong>Report Summarizer:</strong> Automated report generation and summarization</li>
+                </ul>
+            </div>
+
+            <div class="table-card">
+                <h4>Self-Learning System (Phase 2 & 3)</h4>
+                <div class="purpose">
+                    <strong>Purpose:</strong> Continuous learning and model improvement through feedback loops.
+                </div>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li><strong>Adaptive Learning:</strong> Models retrain based on new data and performance feedback</li>
+                    <li><strong>A/B Testing:</strong> Compares algorithm performance and selects best performers</li>
+                    <li><strong>Reinforcement Learning:</strong> Learns optimal strategies through trial and reward</li>
+                    <li><strong>Transfer Learning:</strong> Applies knowledge from one domain to improve others</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p style="color: var(--text-secondary);">Last Updated: March 8, 2026</p>
+            <a href="/" class="btn btn-success">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- No Results Message (hidden by default) -->
+        <div id="noResults" class="no-results" style="display: none;">
+            <i class="fas fa-search"></i>
+            <p>No tables found matching your search criteria.</p>
+            <button class="btn" onclick="clearSearch()">Clear Search</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid for ER diagram
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+            securityLevel: 'loose'
+        });
+
+        // Update table count
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableCards = document.querySelectorAll('.table-card').length;
+            document.getElementById('tableCount').textContent = `${tableCards} Tables Documented`;
+        });
+
+        // Global Search Functionality
+        document.getElementById('globalSearch').addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const tableCards = document.querySelectorAll('.table-card');
+            let visibleCount = 0;
+
+            tableCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show/hide no results message
+            const noResults = document.getElementById('noResults');
+            if (visibleCount === 0 && searchTerm !== '') {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        });
+
+        function clearSearch() {
+            document.getElementById('globalSearch').value = '';
+            document.querySelectorAll('.table-card').forEach(card => {
+                card.classList.remove('hidden');
+                card.style.display = 'block';
+            });
+            document.getElementById('noResults').style.display = 'none';
+        }
+
+        // Column Filter Functionality
+        function filterColumns(input) {
+            const searchTerm = input.value.toLowerCase();
+            const table = input.closest('.table-card').querySelector('table tbody');
+            const rows = table.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Dark Mode Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            // Update button text and icon
+            const themeText = document.getElementById('themeText');
+            const themeIcon = document.getElementById('themeIcon');
+
+            if (newTheme === 'dark') {
+                themeText.textContent = 'Light';
+                themeIcon.className = 'fas fa-sun';
+            } else {
+                themeText.textContent = 'Dark';
+                themeIcon.className = 'fas fa-moon';
+            }
+
+            // Reinitialize mermaid with new theme
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: newTheme === 'dark' ? 'dark' : 'default',
+                securityLevel: 'loose'
+            });
+
+            // Reload mermaid diagrams
+            const mermaidDivs = document.querySelectorAll('.mermaid');
+            mermaidDivs.forEach(div => {
+                const graphDefinition = div.textContent;
+                div.removeAttribute('data-processed');
+                mermaid.render('mermaid-' + Math.random(), graphDefinition).then(result => {
+                    div.innerHTML = result.svg;
+                });
+            });
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            const themeText = document.getElementById('themeText');
+            const themeIcon = document.getElementById('themeIcon');
+
+            if (savedTheme === 'dark') {
+                themeText.textContent = 'Light';
+                themeIcon.className = 'fas fa-sun';
+            }
+        });
+
+        // PDF Export Functionality
+        function exportToPDF() {
+            const element = document.querySelector('.container');
+            const opt = {
+                margin: 0.5,
+                filename: 'smart-logistics-data-model.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Hide controls before export
+            const controls = document.querySelector('.top-controls');
+            const originalDisplay = controls.style.display;
+            controls.style.display = 'none';
+
+            // Show notification
+            const notification = document.createElement('div');
+            notification.textContent = '📄 Generating PDF...';
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #667eea; color: white; padding: 15px 25px; border-radius: 5px; z-index: 10000; font-weight: bold;';
+            document.body.appendChild(notification);
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                controls.style.display = originalDisplay;
+                notification.textContent = '✅ PDF Downloaded!';
+                setTimeout(() => notification.remove(), 3000);
+            });
+        }
+
+        // Copy SQL Functionality
+        function copySQL(button) {
+            const sqlBlock = button.parentElement;
+            const sqlText = sqlBlock.textContent.replace('Copy', '').replace('SQL', '').trim();
+
+            navigator.clipboard.writeText(sqlText).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#10b981';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#4299e1';
+                }, 2000);
+            });
+        }
+
+        // Smooth Scroll for Anchor Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K: Focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('globalSearch').focus();
+            }
+
+            // Ctrl/Cmd + P: Export PDF
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                exportToPDF();
+            }
+
+            // Ctrl/Cmd + D: Toggle Dark Mode
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+    </script>
+</body>
+</html>
+

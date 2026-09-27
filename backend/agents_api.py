@@ -6,10 +6,13 @@ Flask routes for interacting with AI agents
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import logging
+import threading
+import time
 
 from ai_agents.orchestrator_agent import OrchestratorAgent
 from ai_agents.route_optimizer_agent import RouteOptimizerAgent
 from ai_agents.demand_predictor_agent import DemandPredictorAgent
+from ai_agents import trace_bus
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +89,127 @@ def orchestrate_agents():
             'success': False,
             'error': str(e)
         }), 500
+
+
+def _summarize_for_trace(obj, max_len: int = 220) -> str:
+    """Produce a short human-readable summary of a dict for the trace console"""
+    try:
+        text = str(obj)
+        return text if len(text) <= max_len else text[:max_len] + '…'
+    except Exception:
+        return '<unavailable>'
+
+
+def _run_agent_traced(agent, environment: dict, run_id: str, action_label: str, delay: float = 0.35):
+    """
+    Execute an agent's Perceive -> Decide -> Act -> Learn lifecycle in a
+    background thread, emitting a trace event after each phase so the
+    frontend can poll and render a live "agent thinking" stream.
+    """
+    try:
+        trace_bus.emit(run_id, 'perceive', f"{agent.name} is perceiving the environment…")
+        time.sleep(delay)
+        perception = agent.perceive(environment)
+        trace_bus.emit(run_id, 'perceive', 'Perception complete', _summarize_for_trace(perception))
+
+        trace_bus.emit(run_id, 'decide', f"{agent.name} is evaluating options and deciding on actions…")
+        time.sleep(delay)
+        decision = agent.decide(perception)
+        trace_bus.emit(run_id, 'decide', 'Decision made', _summarize_for_trace(decision))
+
+        trace_bus.emit(run_id, 'act', f"{agent.name} is executing the chosen actions…")
+        time.sleep(delay)
+        result = agent.act(decision)
+        trace_bus.emit(run_id, 'act', 'Actions executed', _summarize_for_trace(result))
+
+        trace_bus.emit(run_id, 'learn', f"{agent.name} is updating memory & confidence from this outcome…")
+        time.sleep(delay * 0.6)
+        experience = {
+            'perception': perception,
+            'decision': decision,
+            'result': result,
+            'success': result.get('success', False),
+            'timestamp': datetime.now().isoformat()
+        }
+        agent.learn(experience)
+        trace_bus.emit(run_id, 'learn', 'Learning complete — experience stored, metrics updated')
+
+        final_result = {
+            'success': True,
+            'agent_id': agent.agent_id,
+            'agent_name': agent.name,
+            'result': result,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        log_agent_action(agent.agent_id, agent.name, action_label, final_result,
+                          result.get('success', False), 0)
+
+        trace_bus.complete(run_id, final_result)
+
+    except Exception as e:
+        logger.error(f"Traced agent run {run_id} failed: {str(e)}")
+        trace_bus.fail(run_id, str(e))
+
+
+@agents_bp.route('/route-optimizer/execute-traced', methods=['POST'])
+def execute_route_optimizer_traced():
+    """
+    Start a traced (streamable) execution of the route optimizer agent.
+    Returns immediately with a run_id; poll GET /api/trace/<run_id> for
+    live Perceive/Decide/Act/Learn progress.
+    """
+    try:
+        data = request.get_json() or {}
+        orch = get_orchestrator()
+        agent = orch.agents.get('route_optimizer')
+
+        if not agent:
+            return jsonify({'error': 'Route optimizer agent not found'}), 404
+
+        run_id = trace_bus.start_run(agent.agent_id, agent.name, 'route_optimization')
+        thread = threading.Thread(
+            target=_run_agent_traced,
+            args=(agent, data, run_id, 'route_optimization'),
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({'success': True, 'run_id': run_id}), 202
+
+    except Exception as e:
+        logger.error(f"Error starting traced route optimizer: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@agents_bp.route('/demand-predictor/execute-traced', methods=['POST'])
+def execute_demand_predictor_traced():
+    """
+    Start a traced (streamable) execution of the demand predictor agent.
+    Returns immediately with a run_id; poll GET /api/trace/<run_id> for
+    live Perceive/Decide/Act/Learn progress.
+    """
+    try:
+        data = request.get_json() or {}
+        orch = get_orchestrator()
+        agent = orch.agents.get('demand_predictor')
+
+        if not agent:
+            return jsonify({'error': 'Demand predictor agent not found'}), 404
+
+        run_id = trace_bus.start_run(agent.agent_id, agent.name, 'demand_forecasting')
+        thread = threading.Thread(
+            target=_run_agent_traced,
+            args=(agent, data, run_id, 'demand_forecasting'),
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({'success': True, 'run_id': run_id}), 202
+
+    except Exception as e:
+        logger.error(f"Error starting traced demand predictor: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @agents_bp.route('/route-optimizer/execute', methods=['POST'])
